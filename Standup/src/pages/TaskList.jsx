@@ -35,7 +35,7 @@ const TaskList = () => {
   const [editDescription, setEditDescription] = useState('');
   const [editTaskType, setEditTaskType] = useState('Task');
   const [editPriority, setEditPriority] = useState('Medium');
-  const [editStatus, setEditStatus] = useState('Todo');
+  const [editStatus, setEditStatus] = useState('Open');
 
   const openViewModal = (task) => {
     setSelectedTask(task);
@@ -158,7 +158,7 @@ const TaskList = () => {
         task_description: description,
         task_type: taskType,
         priority: priority,
-        status: 'Todo'
+        status: 'Open'
       });
 
       if (result.success) {
@@ -169,7 +169,7 @@ const TaskList = () => {
           task_description: description,
           task_type: taskType,
           priority: priority,
-          status: 'Todo',
+          status: 'Open',
           created_at: new Date().toISOString()
         };
         setTasks([...tasks, newTask]);
@@ -195,16 +195,17 @@ const TaskList = () => {
     const t = String(type).toLowerCase();
     if (t === 'bug') return <span className="type-icon type-bug">B</span>;
     if (t === 'feature') return <span className="type-icon type-feature">F</span>;
+    if (t === 'later fix') return <span className="type-icon type-later-fix">L</span>;
     return <span className="type-icon type-task">T</span>;
   };
 
   const getStatusPill = (status) => {
     const s = String(status).toLowerCase();
-    if (s === 'todo') return <span className="status-pill status-todo">To do</span>;
+    if (s === 'open' || s === 'todo') return <span className="status-pill status-open">Open</span>;
     if (s === 'in progress') return <span className="status-pill status-progress">In progress</span>;
     if (s === 'review') return <span className="status-pill status-review">Review</span>;
-    if (s === 'done') return <span className="status-pill status-done">Done</span>;
-    return <span className="status-pill status-todo">{status}</span>;
+    if (s === 'closed' || s === 'done') return <span className="status-pill status-closed">Closed</span>;
+    return <span className="status-pill status-open">{status}</span>;
   };
 
   const getPriorityTag = (priority) => {
@@ -277,6 +278,7 @@ const TaskList = () => {
               <option value="Task">Task</option>
               <option value="Bug">Bug</option>
               <option value="Feature">Feature</option>
+              <option value="Later Fix">Later Fix</option>
             </select>
           </div>
           <div style={{ flex: 0.8 }}>
@@ -307,6 +309,7 @@ const TaskList = () => {
             <option value="Task">Task</option>
             <option value="Bug">Bug</option>
             <option value="Feature">Feature</option>
+            <option value="Later Fix">Later Fix</option>
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -322,10 +325,10 @@ const TaskList = () => {
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gray-500)' }}>Status:</span>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--gray-300)', fontSize: '12px', background: 'var(--white)' }}>
             <option value="All">All</option>
-            <option value="Todo">To do</option>
+            <option value="Open">Open</option>
             <option value="In progress">In progress</option>
             <option value="Review">Review</option>
-            <option value="Done">Done</option>
+            <option value="Closed">Closed</option>
           </select>
         </div>
         
@@ -366,7 +369,7 @@ const TaskList = () => {
                   <td className="col-key">{task.task_id}</td>
                   <td className="col-task" style={{ fontWeight: 500, color: 'var(--ink)' }}>{task.task}</td>
                   <td className="col-type">{getTypeIcon(task.task_type)}</td>
-                  <td className="col-summary" style={String(task.status).toLowerCase() === 'done' ? { color: 'var(--gray-500)', textDecoration: 'line-through' } : {}}>
+                  <td className="col-summary" style={(String(task.status).toLowerCase() === 'closed' || String(task.status).toLowerCase() === 'done') ? { color: 'var(--gray-500)', textDecoration: 'line-through' } : {}}>
                     {task.task_description}
                   </td>
                   <td>{getStatusPill(task.status)}</td>
@@ -477,6 +480,7 @@ const TaskList = () => {
                       <option value="Task">Task</option>
                       <option value="Bug">Bug</option>
                       <option value="Feature">Feature</option>
+                      <option value="Later Fix">Later Fix</option>
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
@@ -490,10 +494,10 @@ const TaskList = () => {
                   <div style={{ flex: 1 }}>
                     <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 600 }}>Status</label>
                     <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid var(--gray-300)', fontSize: '13px' }}>
-                      <option value="Todo">To do</option>
+                      <option value="Open">Open</option>
                       <option value="In progress">In progress</option>
                       <option value="Review">Review</option>
-                      <option value="Done">Done</option>
+                      <option value="Closed">Closed</option>
                     </select>
                   </div>
                 </div>

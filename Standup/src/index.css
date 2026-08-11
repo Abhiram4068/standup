@@ -469,9 +469,9 @@ body {
   white-space: nowrap;
 }
 
-.status-todo {
-  background: var(--gray-100);
-  color: var(--gray-700);
+.status-open {
+  background: #FEE2E2;
+  color: #DC2626;
 }
 
 .status-progress {
@@ -484,7 +484,7 @@ body {
   color: #946200;
 }
 
-.status-done {
+.status-closed {
   background: #E8F3EA;
   color: #2F7D42;
 }
@@ -686,6 +686,10 @@ table.task-table {
 
 .type-feature {
   background: var(--orange);
+}
+
+.type-later-fix {
+  background: #6B7280;
 }
 
 .priority-tag {
