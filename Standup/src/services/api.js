@@ -94,6 +94,7 @@ export async function createTask(data) {
       task_type: data.task_type,
       priority: data.priority,
       status: data.status || 'Todo',
+      scope: data.scope || 'Other',
       created_at: new Date().toISOString()
     };
     if (data.project_id && cache.tasks[data.project_id]) {
@@ -117,6 +118,7 @@ export async function updateTask(data) {
       task_type: data.task_type,
       priority: data.priority,
       status: data.status,
+      scope: data.scope || 'Other',
       modified_at: new Date().toISOString()
     };
     
