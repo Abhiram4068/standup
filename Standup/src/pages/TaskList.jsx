@@ -15,12 +15,14 @@ const TaskList = () => {
   const [taskName, setTaskName] = useState('');
   const [description, setDescription] = useState('');
   const [taskType, setTaskType] = useState('Task');
+  const [scope, setScope] = useState('Other');
   const [priority, setPriority] = useState('Medium');
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
 
   // Filter State
   const [filterType, setFilterType] = useState('All');
+  const [filterScope, setFilterScope] = useState('All');
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
   const [selectedTask, setSelectedTask] = useState(null);
@@ -34,6 +36,7 @@ const TaskList = () => {
   const [editTaskName, setEditTaskName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editTaskType, setEditTaskType] = useState('Task');
+  const [editScope, setEditScope] = useState('Client');
   const [editPriority, setEditPriority] = useState('Medium');
   const [editStatus, setEditStatus] = useState('Open');
 
@@ -53,6 +56,7 @@ const TaskList = () => {
     setEditTaskName(task.task);
     setEditDescription(task.task_description);
     setEditTaskType(task.task_type);
+    setEditScope(task.scope || 'Other');
     setEditPriority(task.priority);
     setEditStatus(task.status);
     setActionError('');
@@ -88,6 +92,7 @@ const TaskList = () => {
         task: editTaskName,
         task_description: editDescription,
         task_type: editTaskType,
+        scope: editScope,
         priority: editPriority,
         status: editStatus
       });
@@ -99,6 +104,7 @@ const TaskList = () => {
           task: editTaskName,
           task_description: editDescription,
           task_type: editTaskType,
+          scope: editScope,
           priority: editPriority,
           status: editStatus
         } : t));
@@ -157,6 +163,7 @@ const TaskList = () => {
         task: taskName,
         task_description: description,
         task_type: taskType,
+        scope: scope,
         priority: priority,
         status: 'Open'
       });
@@ -168,6 +175,7 @@ const TaskList = () => {
           task: taskName,
           task_description: description,
           task_type: taskType,
+          scope: scope,
           priority: priority,
           status: 'Open',
           created_at: new Date().toISOString()
@@ -176,6 +184,7 @@ const TaskList = () => {
         setTaskName('');
         setDescription('');
         setTaskType('Task');
+        setScope('Other');
         setPriority('Medium');
       } else {
         setCreateError(result.error || 'Failed to create task');
@@ -208,6 +217,14 @@ const TaskList = () => {
     return <span className="status-pill status-open">{status}</span>;
   };
 
+  const getScopePill = (scope) => {
+    const s = String(scope || 'Other').toLowerCase();
+    if (s === 'client') return <span className="scope-pill scope-client">Client</span>;
+    if (s === 'server') return <span className="scope-pill scope-server">Server</span>;
+    if (s === 'db') return <span className="scope-pill scope-db">DB</span>;
+    return <span className="scope-pill scope-other">{scope || 'Other'}</span>;
+  };
+
   const getPriorityTag = (priority) => {
     const p = String(priority).toLowerCase();
     if (p === 'high') return <span className="priority-tag"><span className="priority-flag flag-high"></span>High</span>;
@@ -224,6 +241,7 @@ const TaskList = () => {
 
   const filteredTasks = tasks.filter(task => {
     if (filterType !== 'All' && String(task.task_type).toLowerCase() !== filterType.toLowerCase()) return false;
+    if (filterScope !== 'All' && String(task.scope || 'Other').toLowerCase() !== filterScope.toLowerCase()) return false;
     if (filterPriority !== 'All' && String(task.priority).toLowerCase() !== filterPriority.toLowerCase()) return false;
     if (filterStatus !== 'All' && String(task.status).toLowerCase() !== filterStatus.toLowerCase()) return false;
     return true;
@@ -282,6 +300,19 @@ const TaskList = () => {
             </select>
           </div>
           <div style={{ flex: 0.8 }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 600 }}>Scope</label>
+            <select 
+              value={scope}
+              onChange={(e) => setScope(e.target.value)}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid var(--gray-300)', fontSize: '13px' }}
+            >
+              <option value="Client">Client</option>
+              <option value="Server">Server</option>
+              <option value="DB">DB</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div style={{ flex: 0.8 }}>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 600 }}>Priority</label>
             <select 
               value={priority}
@@ -313,6 +344,16 @@ const TaskList = () => {
           </select>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gray-500)' }}>Scope:</span>
+          <select value={filterScope} onChange={(e) => setFilterScope(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--gray-300)', fontSize: '12px', background: 'var(--white)' }}>
+            <option value="All">All</option>
+            <option value="Client">Client</option>
+            <option value="Server">Server</option>
+            <option value="DB">DB</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gray-500)' }}>Priority:</span>
           <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--gray-300)', fontSize: '12px', background: 'var(--white)' }}>
             <option value="All">All</option>
@@ -332,9 +373,9 @@ const TaskList = () => {
           </select>
         </div>
         
-        {(filterType !== 'All' || filterPriority !== 'All' || filterStatus !== 'All') && (
+        {(filterType !== 'All' || filterScope !== 'All' || filterPriority !== 'All' || filterStatus !== 'All') && (
           <button 
-            onClick={() => { setFilterType('All'); setFilterPriority('All'); setFilterStatus('All'); }} 
+            onClick={() => { setFilterType('All'); setFilterScope('All'); setFilterPriority('All'); setFilterStatus('All'); }} 
             style={{ background: 'transparent', border: 'none', color: 'var(--orange)', cursor: 'pointer', fontSize: '12px', fontWeight: 600, padding: 0 }}
           >
             Clear Filters
@@ -351,6 +392,7 @@ const TaskList = () => {
               <th className="col-key sortable">Key ↓</th>
               <th className="col-task sortable">Task</th>
               <th className="col-type">Type</th>
+              <th className="col-scope">Scope</th>
               <th className="col-summary sortable">Summary</th>
               <th className="col-status sortable">Status</th>
               <th className="col-priority sortable">Priority</th>
@@ -369,11 +411,12 @@ const TaskList = () => {
                   <td className="col-key">{task.task_id}</td>
                   <td className="col-task" style={{ fontWeight: 500, color: 'var(--ink)' }}>{task.task}</td>
                   <td className="col-type">{getTypeIcon(task.task_type)}</td>
+                  <td className="col-scope">{getScopePill(task.scope)}</td>
                   <td className="col-summary" style={(String(task.status).toLowerCase() === 'closed' || String(task.status).toLowerCase() === 'done') ? { color: 'var(--gray-500)', textDecoration: 'line-through' } : {}}>
                     {task.task_description}
                   </td>
-                  <td>{getStatusPill(task.status)}</td>
-                  <td>{getPriorityTag(task.priority)}</td>
+                  <td className="col-status">{getStatusPill(task.status)}</td>
+                  <td className="col-priority">{getPriorityTag(task.priority)}</td>
                   <td className="col-due">{formatDate(task.created_at)}</td>
                   <td className="col-actions">
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
@@ -405,6 +448,7 @@ const TaskList = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: 'var(--gray-500)' }}>
                   {getTypeIcon(selectedTask.task_type)} {selectedTask.task_type}
                 </div>
+                {getScopePill(selectedTask.scope)}
               </div>
               <div style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--gray-700)', background: 'var(--gray-100)', padding: '16px', borderRadius: 'var(--radius)', maxHeight: '200px', overflowY: 'auto' }}>
                 {selectedTask.task_description || 'No description provided.'}
@@ -481,6 +525,15 @@ const TaskList = () => {
                       <option value="Bug">Bug</option>
                       <option value="Feature">Feature</option>
                       <option value="Later Fix">Later Fix</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', fontWeight: 600 }}>Scope</label>
+                    <select value={editScope} onChange={(e) => setEditScope(e.target.value)} style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid var(--gray-300)', fontSize: '13px' }}>
+                      <option value="Client">Client</option>
+                      <option value="Server">Server</option>
+                      <option value="DB">DB</option>
+                      <option value="Other">Other</option>
                     </select>
                   </div>
                   <div style={{ flex: 1 }}>
