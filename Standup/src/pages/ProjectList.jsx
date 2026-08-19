@@ -101,9 +101,9 @@ const ProjectList = () => {
 
   const { searchQuery } = useOutletContext() || { searchQuery: '' };
 
-  const filteredProjects = projects.filter(p => 
-    p.project_name.toLowerCase().includes((searchQuery || '').toLowerCase())
-  );
+  const filteredProjects = projects
+    .filter(p => p.project_name.toLowerCase().includes((searchQuery || '').toLowerCase()))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (loading) {
     return (

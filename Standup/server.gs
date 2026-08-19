@@ -151,7 +151,8 @@ function getProjects() {
       created_at: row[3],
       modified_at: row[4],
       task_count: taskCounts[String(row[0])] || 0
-    }));
+    }))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 }
 
 
@@ -300,6 +301,8 @@ function getTasks(projectId) {
   if (projectId) {
     tasks = tasks.filter(task => String(task.project_id) === String(projectId));
   }
+
+  tasks.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   return tasks;
 }

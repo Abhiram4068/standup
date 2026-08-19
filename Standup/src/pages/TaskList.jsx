@@ -239,13 +239,15 @@ const TaskList = () => {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const filteredTasks = tasks.filter(task => {
-    if (filterType !== 'All' && String(task.task_type).toLowerCase() !== filterType.toLowerCase()) return false;
-    if (filterScope !== 'All' && String(task.scope || 'Other').toLowerCase() !== filterScope.toLowerCase()) return false;
-    if (filterPriority !== 'All' && String(task.priority).toLowerCase() !== filterPriority.toLowerCase()) return false;
-    if (filterStatus !== 'All' && String(task.status).toLowerCase() !== filterStatus.toLowerCase()) return false;
-    return true;
-  });
+  const filteredTasks = tasks
+    .filter(task => {
+      if (filterType !== 'All' && String(task.task_type).toLowerCase() !== filterType.toLowerCase()) return false;
+      if (filterScope !== 'All' && String(task.scope || 'Other').toLowerCase() !== filterScope.toLowerCase()) return false;
+      if (filterPriority !== 'All' && String(task.priority).toLowerCase() !== filterPriority.toLowerCase()) return false;
+      if (filterStatus !== 'All' && String(task.status).toLowerCase() !== filterStatus.toLowerCase()) return false;
+      return true;
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (loading) {
     return (
