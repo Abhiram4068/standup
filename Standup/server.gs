@@ -4,6 +4,8 @@ const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
 
 const projectsSheet = spreadsheet.getSheetByName('Projects');
 const tasksSheet = spreadsheet.getSheetByName('Tasks');
+const noteProjectsSheet = spreadsheet.getSheetByName('NoteProjects');
+const notesSheet = spreadsheet.getSheetByName('Notes');
 
 // ============================================================
 // HELPER: PREVENT MEMORY CRASHES
@@ -56,6 +58,30 @@ function doGet(e) {
         return createResponse({
           success: true,
           data: getTask(e.parameter.taskId)
+        });
+
+      case 'getNoteProjects':
+        return createResponse({
+          success: true,
+          data: getNoteProjects()
+        });
+
+      case 'getNoteProject':
+        return createResponse({
+          success: true,
+          data: getNoteProject(e.parameter.projectId)
+        });
+
+      case 'getNotes':
+        return createResponse({
+          success: true,
+          data: getNotes(e.parameter.projectId)
+        });
+
+      case 'getNote':
+        return createResponse({
+          success: true,
+          data: getNote(e.parameter.noteId)
         });
 
       default:
@@ -118,6 +144,44 @@ function doPost(e) {
         return createResponse({
           success: true,
           data: deleteTask(data.taskId)
+        });
+
+      // ---------------- NOTE PROJECTS ----------------
+      case 'createNoteProject':
+        return createResponse({
+          success: true,
+          data: createNoteProject(data)
+        });
+
+      case 'updateNoteProject':
+        return createResponse({
+          success: true,
+          data: updateNoteProject(data)
+        });
+
+      case 'deleteNoteProject':
+        return createResponse({
+          success: true,
+          data: deleteNoteProject(data.projectId)
+        });
+
+      // ---------------- NOTES ----------------
+      case 'createNote':
+        return createResponse({
+          success: true,
+          data: createNote(data)
+        });
+
+      case 'updateNote':
+        return createResponse({
+          success: true,
+          data: updateNote(data)
+        });
+
+      case 'deleteNote':
+        return createResponse({
+          success: true,
+          data: deleteNote(data.noteId)
         });
 
       default:
@@ -440,6 +504,254 @@ function deleteTask(taskId) {
 
 
 // ============================================================
+// NOTE PROJECT CRUD
+// ============================================================
+
+function getNoteProjects() {
+  const data = getSheetData(noteProjectsSheet);
+
+  if (data.length <= 1) {
+    return [];
+  }
+
+  return data.slice(1)
+    .filter(row => row[0]) // Skip blank rows (no project_id)
+    .map(row => ({
+      project_id: row[0],
+      project_name: row[1],
+      description: row[2],
+      created_at: row[3],
+      modified_at: row[4]
+    }))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+}
+
+function getNoteProject(projectId) {
+  if (!projectId) throw new Error('projectId is required');
+
+  const data = getSheetData(noteProjectsSheet);
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(projectId)) {
+      return {
+        project_id: data[i][0],
+        project_name: data[i][1],
+        description: data[i][2],
+        created_at: data[i][3],
+        modified_at: data[i][4]
+      };
+    }
+  }
+  throw new Error('Note Project not found');
+}
+
+function createNoteProject(data) {
+  if (!data.project_name) throw new Error('project_name is required');
+
+  const projectId = generateNoteProjectId();
+  const now = new Date();
+
+  noteProjectsSheet.appendRow([
+    projectId,
+    data.project_name,
+    data.description || '',
+    now,
+    now
+  ]);
+
+  return {
+    project_id: projectId,
+    project_name: data.project_name,
+    description: data.description || '',
+    created_at: now,
+    modified_at: now
+  };
+}
+
+function updateNoteProject(data) {
+  if (!data.projectId) throw new Error('projectId is required');
+
+  const rowNumber = findRowById(noteProjectsSheet, data.projectId);
+  if (rowNumber === -1) throw new Error('Note Project not found');
+
+  const existingRow = noteProjectsSheet.getRange(rowNumber, 1, 1, 5).getValues()[0];
+  const now = new Date();
+
+  const projectName = data.project_name !== undefined ? data.project_name : existingRow[1];
+  const description = data.description !== undefined ? data.description : existingRow[2];
+
+  noteProjectsSheet
+    .getRange(rowNumber, 1, 1, 5)
+    .setValues([[
+      existingRow[0],
+      projectName,
+      description,
+      existingRow[3],
+      now
+    ]]);
+
+  return {
+    project_id: existingRow[0],
+    project_name: projectName,
+    description: description,
+    created_at: existingRow[3],
+    modified_at: now
+  };
+}
+
+function deleteNoteProject(projectId) {
+  if (!projectId) throw new Error('projectId is required');
+
+  const rowNumber = findRowById(noteProjectsSheet, projectId);
+  if (rowNumber === -1) throw new Error('Note Project not found');
+
+  const notes = getNotes(projectId);
+  if (notes.length > 0) {
+    throw new Error('Cannot delete project because it contains notes');
+  }
+
+  noteProjectsSheet.deleteRow(rowNumber);
+
+  return {
+    project_id: projectId,
+    message: 'Note Project deleted successfully'
+  };
+}
+
+
+// ============================================================
+// NOTE CRUD
+// ============================================================
+
+function getNotes(projectId) {
+  const data = getSheetData(notesSheet);
+
+  if (data.length <= 1) return [];
+
+  let notes = data.slice(1)
+    .filter(row => row[0]) // Skip blank rows
+    .map(row => ({
+      note_id: row[0],
+      project_id: row[1],
+      title: row[2],
+      note: row[3],
+      scope: row[4],
+      created_at: row[5],
+      modified_at: row[6]
+    }));
+
+  if (projectId) {
+    notes = notes.filter(note => String(note.project_id) === String(projectId));
+  }
+
+  notes.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  return notes;
+}
+
+function getNote(noteId) {
+  if (!noteId) throw new Error('noteId is required');
+
+  const data = getSheetData(notesSheet);
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(noteId)) {
+      return {
+        note_id: data[i][0],
+        project_id: data[i][1],
+        title: data[i][2],
+        note: data[i][3],
+        scope: data[i][4],
+        created_at: data[i][5],
+        modified_at: data[i][6]
+      };
+    }
+  }
+  throw new Error('Note not found');
+}
+
+function createNote(data) {
+  if (!data.project_id) throw new Error('project_id is required');
+  if (!data.title) throw new Error('title is required');
+
+  getNoteProject(data.project_id); // verify project exists
+
+  const noteId = generateNoteId();
+  const now = new Date();
+
+  notesSheet.appendRow([
+    noteId,
+    data.project_id,
+    data.title,
+    data.note || '',
+    data.scope || 'Other',
+    now,
+    now
+  ]);
+
+  return {
+    note_id: noteId,
+    project_id: data.project_id,
+    title: data.title,
+    note: data.note || '',
+    scope: data.scope || 'Other',
+    created_at: now,
+    modified_at: now
+  };
+}
+
+function updateNote(data) {
+  if (!data.noteId) throw new Error('noteId is required');
+
+  const rowNumber = findRowById(notesSheet, data.noteId);
+  if (rowNumber === -1) throw new Error('Note not found');
+
+  const existingRow = notesSheet.getRange(rowNumber, 1, 1, 7).getValues()[0];
+  const now = new Date();
+
+  const projectId = data.project_id !== undefined ? data.project_id : existingRow[1];
+  if (data.project_id !== undefined) getNoteProject(projectId);
+
+  const title = data.title !== undefined ? data.title : existingRow[2];
+  const note = data.note !== undefined ? data.note : existingRow[3];
+  const scope = data.scope !== undefined ? data.scope : existingRow[4];
+
+  notesSheet
+    .getRange(rowNumber, 1, 1, 7)
+    .setValues([[
+      existingRow[0],
+      projectId,
+      title,
+      note,
+      scope,
+      existingRow[5],
+      now
+    ]]);
+
+  return {
+    note_id: existingRow[0],
+    project_id: projectId,
+    title: title,
+    note: note,
+    scope: scope,
+    created_at: existingRow[5],
+    modified_at: now
+  };
+}
+
+function deleteNote(noteId) {
+  if (!noteId) throw new Error('noteId is required');
+
+  const rowNumber = findRowById(notesSheet, noteId);
+  if (rowNumber === -1) throw new Error('Note not found');
+
+  notesSheet.deleteRow(rowNumber);
+
+  return {
+    note_id: noteId,
+    message: 'Note deleted successfully'
+  };
+}
+
+
+// ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 
@@ -501,6 +813,38 @@ function generateTaskId() {
   }
 
   return 'T' + String(maxId + 1).padStart(3, '0');
+}
+
+
+function generateNoteProjectId() {
+  const data = getSheetData(noteProjectsSheet);
+  let maxId = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const id = String(data[i][0]);
+    if (id.startsWith('NP')) {
+      const number = parseInt(id.substring(2), 10);
+      if (!isNaN(number)) maxId = Math.max(maxId, number);
+    }
+  }
+
+  return 'NP' + String(maxId + 1).padStart(3, '0');
+}
+
+
+function generateNoteId() {
+  const data = getSheetData(notesSheet);
+  let maxId = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    const id = String(data[i][0]);
+    if (id.startsWith('N')) {
+      const number = parseInt(id.substring(1), 10);
+      if (!isNaN(number)) maxId = Math.max(maxId, number);
+    }
+  }
+
+  return 'N' + String(maxId + 1).padStart(3, '0');
 }
 
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, StickyNote } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -18,6 +18,9 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="nav-group">
           <NavLink to="/" end className={({ isActive }) => isActive ? "nav-item active" : "nav-item"} onClick={onClose}>
             <LayoutGrid size={15} strokeWidth={2} /> Projects
+          </NavLink>
+          <NavLink to="/notes" className={({ isActive }) => isActive || location.pathname.startsWith('/notes') ? "nav-item active" : "nav-item"} onClick={onClose}>
+            <StickyNote size={15} strokeWidth={2} /> Notes
           </NavLink>
         </div>
 
